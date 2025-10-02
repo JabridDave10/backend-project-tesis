@@ -7,6 +7,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { DriversModule } from './modules/drivers/drivers.module';
 import { VehiclesModule } from './modules/vehicles/vehicles.module';
+import { RoutesModule } from './modules/routes/routes.module';
 import { LoggerMiddleware } from './logger/logger.middleware';
 import { databaseConfig } from './config/database.config';
 
@@ -20,7 +21,8 @@ import { databaseConfig } from './config/database.config';
     AuthModule,
     UsersModule,
     DriversModule,
-    VehiclesModule
+    VehiclesModule,
+    RoutesModule
   ],
   controllers: [AppController],
   providers: [AppService],
