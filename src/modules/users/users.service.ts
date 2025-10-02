@@ -89,39 +89,31 @@ export class UsersService {
   }
 
   async findAll(): Promise<User[]> {
-    return await this.dataSource
-      .createQueryBuilder()
-      .select([
-        'user.id_user',
-        'user.first_name',
-        'user.last_name', 
-        'user.email',
-        'user.phone',
-        'user.created_at',
-        'user.estsis',
-        'user.id_role'
-      ])
-      .from(User, 'user')
-      .where('user.deleted_at IS NULL')
-      .getRawMany();
+    try {
+      const query = `
+        SELECT * FROM users
+        WHERE deleted_at IS NULL
+      `;
+      const result = await this.dataSource.query(query);
+      return result;
+    } catch (error) {
+      console.error('Error al buscar todos los usuarios:', error);
+      return [];
+    }
   }
 
   async findOne(id: number): Promise<User | undefined> {
-    return await this.dataSource
-      .createQueryBuilder()
-      .select([
-        'user.id_user',
-        'user.first_name',
-        'user.last_name',
-        'user.email', 
-        'user.phone',
-        'user.created_at',
-        'user.estsis',
-        'user.id_role'
-      ])
-      .from(User, 'user')
-      .where('user.id_user = :id AND user.deleted_at IS NULL', { id })
-      .getRawOne();
+    try {
+      const query = `
+        SELECT * FROM users
+        WHERE id_user = $1 AND deleted_at IS NULL
+      `;
+      const result = await this.dataSource.query(query, [id]);
+      return result[0] || undefined;
+    } catch (error) {
+      console.error('Error al buscar usuario por ID:', error);
+      return undefined;
+    }
   }
 
   async findByEmail(email: string): Promise<User | undefined> {

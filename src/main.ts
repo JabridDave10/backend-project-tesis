@@ -2,9 +2,13 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  
+  // Habilitar cookie parser
+  app.use(cookieParser());
   
   // Habilitar validaciones globales
   app.useGlobalPipes(new ValidationPipe({
@@ -13,8 +17,11 @@ async function bootstrap() {
     transform: true,
   }));
   
-  // Habilitar CORS
-  app.enableCors();
+  // Habilitar CORS con configuración para cookies
+  app.enableCors({
+    origin: true,
+    credentials: true, // Importante para cookies
+  });
   
   const config = new DocumentBuilder()
     .setTitle('Cats example')

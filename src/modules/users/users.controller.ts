@@ -1,62 +1,73 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus, Ip, Req, Res } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import type { Request, Response } from 'express';
+import { validate } from 'class-validator';
+import { plainToClass } from 'class-transformer';
 
-@ApiTags('users')
+@ApiTags('Users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post('register')
-  @ApiOperation({ summary: 'Registrar nuevo usuario con credenciales' })
-  @ApiResponse({ 
-    status: 201, 
-    description: 'Usuario registrado exitosamente',
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string', example: 'Usuario registrado exitosamente' },
-        user: {
-          type: 'object',
-          properties: {
-            id: { type: 'number', example: 1 },
-            first_name: { type: 'string', example: 'Juan' },
-            last_name: { type: 'string', example: 'Pérez' },
-            identification: { type: 'string', example: '12345678' },
-            birthdate: { type: 'string', example: '1990-05-15' },
-            email: { type: 'string', example: 'juan@example.com' },
-            phone: { type: 'string', example: '1234567890' }
-          }
-        }
-      }
-    }
-  })
-  @ApiResponse({ status: 400, description: 'Error al registrar usuario' })
-  @ApiBody({ type: RegisterUserDto })
-  async register(@Body() registerDto: RegisterUserDto) {
+  async register(
+    @Body() body: RegisterUserDto,
+    @Ip() ip: string,
+    @Req() request: Request,
+    @Res() response: Response,
+  ) {
     try {
-      const result = await this.usersService.registerUser(registerDto);
-      return {
-        message: 'Usuario registrado exitosamente',
-        user: {
-          id: result.user.id_user,
-          first_name: result.user.first_name,
-          last_name: result.user.last_name,
-          identification: result.user.identification,
-          birthdate: result.user.birthdate,
-          email: result.user.email,
-          phone: result.user.phone
+      console.log('Register request received:', { body, ip, userAgent: request.headers['user-agent'] });
+      
+      // Validar datos usando class-validator
+      const registerUser = plainToClass(RegisterUserDto, body);
+      const resultValidated = await validate(registerUser).then((errors) => {
+        if (errors.length > 0) {
+          return errors;
+        } else {
+          return 1;
         }
-      };
+      });
+
+      if (resultValidated !== 1) {
+        console.log('Validation errors:', resultValidated);
+        return response.status(400).json({
+          message: 'Error de validación',
+          errors: resultValidated
+        });
+      }
+
+      const result = await this.usersService.registerUser(body);
+      console.log('User registered successfully:', result.user.id_user);
+
+      if (result != null && result != undefined) {
+        const responseData = {
+          message: 'Usuario registrado exitosamente',
+          user: {
+            id: result.user.id_user,
+            first_name: result.user.first_name,
+            last_name: result.user.last_name,
+            identification: result.user.identification,
+            birthdate: result.user.birthdate,
+            email: result.user.email,
+            phone: result.user.phone
+          }
+        };
+        
+        response.status(201).json(responseData);
+        return;
+      } else {
+        response.status(401).json({ error: 'Error al registrar usuario' });
+        return;
+      }
     } catch (error) {
-      throw new HttpException(
-        {
-          message: 'Error al registrar usuario',
-          error: error.message
-        },
-        HttpStatus.BAD_REQUEST
-      );
+      console.error('Error in register:', error);
+      response.status(500).json({ 
+        error: 'Internal server error',
+        message: error.message 
+      });
     }
   }
 }
