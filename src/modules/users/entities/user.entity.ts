@@ -1,5 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToOne } from 'typeorm';
-import { Credentials } from './credentials.entity';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToOne, OneToMany } from 'typeorm';
+import { Credentials } from '../../credentials/entities/credentials.entity';
+import { UserRole } from 'src/modules/roles/entities/user_role';
  
 @Entity('users')
 export class User{
@@ -42,4 +43,8 @@ export class User{
     // Relación con Credentials
     @OneToOne(() => Credentials, credentials => credentials.user)
     credentials: Credentials;
+
+    // Relación con Role
+    @OneToMany(() => UserRole, userRole => userRole.user)
+    userRoles: UserRole[];
 }

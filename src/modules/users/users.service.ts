@@ -1,10 +1,9 @@
-
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { User } from './entities/user.entity';
 import { RegisterUserDto } from './dto/register-user.dto';
-import { CredentialsService } from './credentials.service';
+import { CredentialsService } from '../credentials/credentials.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
