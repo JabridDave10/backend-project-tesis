@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Read(//c/Users/diego/OneDrive/Escritorio/Proyecto/frontend-project-tesis/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

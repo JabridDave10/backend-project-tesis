@@ -1,73 +1,99 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus, Ip, Req, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus, Ip, Req, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
 import { RegisterUserDto } from './dto/register-user.dto';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
-import type { Request, Response } from 'express';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiConsumes } from '@nestjs/swagger';
+import type { Request } from 'express';
 import { validate } from 'class-validator';
 import { plainToClass } from 'class-transformer';
+import { FileValidationService } from '../../common/services/file-validation.service';
 
 @ApiTags('Users')
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly fileValidationService: FileValidationService,
+  ) {}
 
   @Post('register')
   async register(
     @Body() body: RegisterUserDto,
     @Ip() ip: string,
     @Req() request: Request,
-    @Res() response: Response,
   ) {
-    try {
-      console.log('Register request received:', { body, ip, userAgent: request.headers['user-agent'] });
+    console.log('Register request received:', { body, ip, userAgent: request.headers['user-agent'] });
+    
+    // Validar datos usando class-validator
+    const registerUser = plainToClass(RegisterUserDto, body);
+    const validationErrors = await validate(registerUser);
+
+    if (validationErrors.length > 0) {
+      console.log('Validation errors:', validationErrors);
+      // Formatear errores de validación para una respuesta más clara
+      const formattedErrors = validationErrors.map(error => ({
+        property: error.property,
+        constraints: error.constraints,
+        value: error.value
+      }));
       
-      // Validar datos usando class-validator
-      const registerUser = plainToClass(RegisterUserDto, body);
-      const resultValidated = await validate(registerUser).then((errors) => {
-        if (errors.length > 0) {
-          return errors;
-        } else {
-          return 1;
-        }
+      throw new BadRequestException({
+        message: 'Error de validación',
+        errors: formattedErrors
       });
+    }
 
-      if (resultValidated !== 1) {
-        console.log('Validation errors:', resultValidated);
-        return response.status(400).json({
-          message: 'Error de validación',
-          errors: resultValidated
-        });
+    const result = await this.usersService.registerUser(body);
+    console.log('User registered successfully:', result.user.id_user);
+
+    return {
+      message: 'Usuario registrado exitosamente',
+      user: {
+        id: result.user.id_user,
+        first_name: result.user.first_name,
+        last_name: result.user.last_name,
+        identification: result.user.identification,
+        birthdate: result.user.birthdate,
+        email: result.user.email,
+        phone: result.user.phone
       }
+    };
+  }
 
-      const result = await this.usersService.registerUser(body);
-      console.log('User registered successfully:', result.user.id_user);
+  @Post(':id/upload-photo')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Subir foto de perfil del usuario' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Archivo de imagen (jpg, jpeg, png) - Máximo 5MB',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Foto subida exitosamente' })
+  @ApiResponse({ status: 400, description: 'Archivo inválido' })
+  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
+  async uploadPhoto(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    // Delegar validación al FileValidationService (solo imágenes, sin PDF)
+    this.fileValidationService.validateImageFile(file, 5);
 
-      if (result != null && result != undefined) {
-        const responseData = {
-          message: 'Usuario registrado exitosamente',
-          user: {
-            id: result.user.id_user,
-            first_name: result.user.first_name,
-            last_name: result.user.last_name,
-            identification: result.user.identification,
-            birthdate: result.user.birthdate,
-            email: result.user.email,
-            phone: result.user.phone
-          }
-        };
-        
-        response.status(201).json(responseData);
-        return;
-      } else {
-        response.status(401).json({ error: 'Error al registrar usuario' });
-        return;
-      }
+    try {
+      const result = await this.usersService.uploadPhoto(+id, file);
+      return {
+        message: 'Foto de perfil subida exitosamente',
+        data: result,
+      };
     } catch (error) {
-      console.error('Error in register:', error);
-      response.status(500).json({ 
-        error: 'Internal server error',
-        message: error.message 
-      });
+      throw error;
     }
   }
 }

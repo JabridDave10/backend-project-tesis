@@ -10,6 +10,7 @@ import { VehiclesModule } from './modules/vehicles/vehicles.module';
 import { RoleModule } from './modules/roles/role.module';
 import { RoutesModule } from './modules/routes/routes.module';
 import { CredentialsModule } from './modules/credentials/credentials.module';
+import { StorageModule } from './modules/storage/storage.module';
 import { LoggerMiddleware } from './logger/logger.middleware';
 import { databaseConfig } from './config/database.config';
 
@@ -18,8 +19,10 @@ import { databaseConfig } from './config/database.config';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+      
     }),
     TypeOrmModule.forRoot(databaseConfig),
+    StorageModule,
     AuthModule,
     UsersModule,
     DriversModule,
