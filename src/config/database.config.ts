@@ -6,6 +6,7 @@ import { Vehicle } from '../modules/vehicles/entities/vehicle.entity';
 import { Route } from '../modules/routes/entities/route.entity';
 import { Role } from '../modules/roles/entities/role.entity';
 import { UserRole } from '../modules/roles/entities/user_role';
+import { Company } from '../modules/company/entities/company.entity';
 
 export const databaseConfig: TypeOrmModuleOptions = {
   type: 'postgres',
@@ -14,7 +15,7 @@ export const databaseConfig: TypeOrmModuleOptions = {
   username: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASS || 'admin',
   database: process.env.DB_NAME || 'logistic_routing_project',
-  entities: [User, Credentials, Driver, Vehicle, Route, Role, UserRole],
+  entities: [User, Credentials, Driver, Vehicle, Route, Role, UserRole, Company],
   synchronize: process.env.NODE_ENV !== 'production', // Solo en desarrollo
   logging: process.env.NODE_ENV === 'development',
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,

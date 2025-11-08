@@ -1,13 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus, Ip, Req, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus, Ip, Req, Res, UseGuards } from '@nestjs/common';
 import { PermissionsService } from './permissions.service';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { validate } from 'class-validator';
 import { plainToClass } from 'class-transformer';
-
+import { AuthGuard } from '../auth/auth.guard';
 
 @ApiTags('Permissions')
 @Controller('permissions')
+@UseGuards(AuthGuard)
+@ApiBearerAuth('JWT-auth')
 export class PermissionsController {
   constructor(private readonly permissionsService: PermissionsService) {}
   

@@ -19,8 +19,10 @@ async function bootstrap() {
   
   // Habilitar CORS con configuración para cookies
   app.enableCors({
-    origin: true,
+    origin: process.env.FRONTEND_URL || true, // URL del frontend o true para permitir todos
     credentials: true, // Importante para cookies
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
   
   const config = new DocumentBuilder()
