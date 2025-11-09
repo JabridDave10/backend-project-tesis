@@ -114,20 +114,21 @@ export class Product {
   deleted_at: Date;
 
   // ==================== RELACIONES ====================
+  // Comentadas porque usamos raw SQL queries, no repositorios TypeORM
 
-  @ManyToOne(() => Company)
-  @JoinColumn({ name: 'id_company' })
-  company: Company;
+  // @ManyToOne(() => Company)
+  // @JoinColumn({ name: 'id_company' })
+  // company: Company;
 
-  @ManyToOne(() => ProductCategory, (category) => category.products, {
-    nullable: true,
-  })
-  @JoinColumn({ name: 'id_category' })
-  category: ProductCategory;
+  // @ManyToOne(() => ProductCategory, (category) => category.products, {
+  //   nullable: true,
+  // })
+  // @JoinColumn({ name: 'id_category' })
+  // category: ProductCategory;
 
-  @OneToMany(() => Stock, (stock) => stock.product)
-  stocks: Stock[];
+  // @OneToMany(() => Stock, (stock) => stock.product)
+  // stocks: Stock[];
 
-  @OneToMany(() => ProductBatch, (batch) => batch.product)
-  batches: ProductBatch[];
+  // @OneToMany(() => ProductBatch, (batch) => batch.product)
+  // batches: ProductBatch[];
 }

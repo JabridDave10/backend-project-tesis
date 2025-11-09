@@ -60,24 +60,25 @@ export class StockMovement {
   created_at: Date;
 
   // ==================== RELACIONES ====================
+  // Comentadas porque usamos raw SQL queries, no repositorios TypeORM
 
-  @ManyToOne(() => Product)
-  @JoinColumn({ name: 'id_product' })
-  product: Product;
+  // @ManyToOne(() => Product)
+  // @JoinColumn({ name: 'id_product' })
+  // product: Product;
 
-  @ManyToOne(() => Warehouse, { nullable: true })
-  @JoinColumn({ name: 'id_warehouse_origin' })
-  warehouseOrigin: Warehouse;
+  // @ManyToOne(() => Warehouse, { nullable: true })
+  // @JoinColumn({ name: 'id_warehouse_origin' })
+  // warehouseOrigin: Warehouse;
 
-  @ManyToOne(() => Warehouse, { nullable: true })
-  @JoinColumn({ name: 'id_warehouse_destination' })
-  warehouseDestination: Warehouse;
+  // @ManyToOne(() => Warehouse, { nullable: true })
+  // @JoinColumn({ name: 'id_warehouse_destination' })
+  // warehouseDestination: Warehouse;
 
-  @ManyToOne(() => ProductBatch, { nullable: true })
-  @JoinColumn({ name: 'id_batch' })
-  batch: ProductBatch;
+  // @ManyToOne(() => ProductBatch, { nullable: true })
+  // @JoinColumn({ name: 'id_batch' })
+  // batch: ProductBatch;
 
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'created_by' })
-  user: User;
+  // @ManyToOne(() => User)
+  // @JoinColumn({ name: 'created_by' })
+  // user: User;
 }

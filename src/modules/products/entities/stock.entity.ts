@@ -43,16 +43,17 @@ export class Stock {
   updated_by: number; // Usuario que realizó la última actualización
 
   // ==================== RELACIONES ====================
+  // Comentadas porque usamos raw SQL queries, no repositorios TypeORM
 
-  @ManyToOne(() => Product, (product) => product.stocks)
-  @JoinColumn({ name: 'id_product' })
-  product: Product;
+  // @ManyToOne(() => Product, (product) => product.stocks)
+  // @JoinColumn({ name: 'id_product' })
+  // product: Product;
 
-  @ManyToOne(() => Warehouse)
-  @JoinColumn({ name: 'id_warehouse' })
-  warehouse: Warehouse;
+  // @ManyToOne(() => Warehouse)
+  // @JoinColumn({ name: 'id_warehouse' })
+  // warehouse: Warehouse;
 
-  @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'updated_by' })
-  user: User;
+  // @ManyToOne(() => User, { nullable: true })
+  // @JoinColumn({ name: 'updated_by' })
+  // user: User;
 }

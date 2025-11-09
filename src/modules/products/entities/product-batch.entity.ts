@@ -56,12 +56,13 @@ export class ProductBatch {
   created_at: Date;
 
   // ==================== RELACIONES ====================
+  // Comentadas porque usamos raw SQL queries, no repositorios TypeORM
 
-  @ManyToOne(() => Product, (product) => product.batches)
-  @JoinColumn({ name: 'id_product' })
-  product: Product;
+  // @ManyToOne(() => Product, (product) => product.batches)
+  // @JoinColumn({ name: 'id_product' })
+  // product: Product;
 
-  @ManyToOne(() => Warehouse)
-  @JoinColumn({ name: 'id_warehouse' })
-  warehouse: Warehouse;
+  // @ManyToOne(() => Warehouse)
+  // @JoinColumn({ name: 'id_warehouse' })
+  // warehouse: Warehouse;
 }

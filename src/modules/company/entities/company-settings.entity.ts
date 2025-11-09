@@ -67,8 +67,9 @@ export class CompanySettings {
   modified_at: Date;
 
   // ==================== RELACIONES ====================
+  // Comentadas porque usamos raw SQL queries, no repositorios TypeORM
 
-  @OneToOne(() => Company)
-  @JoinColumn({ name: 'id_company' })
-  company: Company;
+  // @OneToOne(() => Company)
+  // @JoinColumn({ name: 'id_company' })
+  // company: Company;
 }
