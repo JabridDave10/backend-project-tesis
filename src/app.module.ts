@@ -11,6 +11,7 @@ import { RoleModule } from './modules/roles/role.module';
 import { RoutesModule } from './modules/routes/routes.module';
 import { CredentialsModule } from './modules/credentials/credentials.module';
 import { StorageModule } from './modules/storage/storage.module';
+import { ProductsModule } from './modules/products/products.module';
 import { LoggerMiddleware } from './logger/logger.middleware';
 import { databaseConfig } from './config/database.config';
 
@@ -29,7 +30,8 @@ import { databaseConfig } from './config/database.config';
     VehiclesModule,
     RoutesModule,
     RoleModule,
-    CredentialsModule
+    CredentialsModule,
+    ProductsModule
   ],
   controllers: [AppController],
   providers: [AppService],
