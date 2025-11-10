@@ -4,33 +4,58 @@ import { DataSource } from 'typeorm';
 import { Driver } from './entities/driver.entity';
 import { CreateDriverDto } from './dto/create-driver.dto';
 import { UpdateDriverDto } from './dto/update-driver.dto';
+import { StorageService } from '../storage/storage.service';
+import { DriverQueryBuilder } from './services/driver-query.builder';
 
+/**
+ * DriversService - Refactorizado con SRP
+ *
+ * Responsabilidad única: Orquestar operaciones de negocio para conductores
+ *
+ * Delega:
+ * - Construcción de queries → DriverQueryBuilder
+ * - Validación de archivos → FileValidationService (en controller)
+ * - Almacenamiento de archivos → StorageService
+ */
 @Injectable()
 export class DriversService {
   constructor(
     @InjectDataSource()
     private dataSource: DataSource,
+    private storageService: StorageService,
+    private queryBuilder: DriverQueryBuilder,
   ) {}
 
   async create(createDriverDto: CreateDriverDto): Promise<Driver> {
     try {
       const query = `
         INSERT INTO drivers (
-          id_user, license_number, license_type, license_expiry_date,
-          license_photo, years_experience, status, notes
+          id_user, license_number, license_categories, license_issue_date, license_expiry_date,
+          license_issuing_authority, license_photo, blood_type, medical_certificate_date,
+          medical_certificate_expiry, medical_restrictions, emergency_contact_name,
+          emergency_contact_relationship, emergency_contact_phone, address, status, notes
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
         RETURNING *
       `;
 
       const values = [
         createDriverDto.id_user,
         createDriverDto.license_number,
-        createDriverDto.license_type,
+        createDriverDto.license_categories.join(','), // Array a string separado por comas
+        createDriverDto.license_issue_date,
         createDriverDto.license_expiry_date,
+        createDriverDto.license_issuing_authority,
         createDriverDto.license_photo || null,
-        createDriverDto.years_experience || 0,
-        createDriverDto.status || 'disponible',
+        createDriverDto.blood_type,
+        createDriverDto.medical_certificate_date,
+        createDriverDto.medical_certificate_expiry,
+        createDriverDto.medical_restrictions || null,
+        createDriverDto.emergency_contact_name,
+        createDriverDto.emergency_contact_relationship,
+        createDriverDto.emergency_contact_phone,
+        createDriverDto.address || null,
+        'disponible', // Estado auto-asignado
         createDriverDto.notes || null,
       ];
 
@@ -98,49 +123,13 @@ export class DriversService {
       // Verificar que el conductor existe
       await this.findOne(id);
 
-      const updateFields: string[] = [];
-      const values: any[] = [];
-      let paramIndex = 1;
+      // Delegar construcción de query al QueryBuilder
+      const { query, values } = this.queryBuilder.buildUpdateQuery(updateDriverDto);
 
-      if (updateDriverDto.license_number !== undefined) {
-        updateFields.push(`license_number = $${paramIndex++}`);
-        values.push(updateDriverDto.license_number);
-      }
-      if (updateDriverDto.license_type !== undefined) {
-        updateFields.push(`license_type = $${paramIndex++}`);
-        values.push(updateDriverDto.license_type);
-      }
-      if (updateDriverDto.license_expiry_date !== undefined) {
-        updateFields.push(`license_expiry_date = $${paramIndex++}`);
-        values.push(updateDriverDto.license_expiry_date);
-      }
-      if (updateDriverDto.license_photo !== undefined) {
-        updateFields.push(`license_photo = $${paramIndex++}`);
-        values.push(updateDriverDto.license_photo);
-      }
-      if (updateDriverDto.years_experience !== undefined) {
-        updateFields.push(`years_experience = $${paramIndex++}`);
-        values.push(updateDriverDto.years_experience);
-      }
-      if (updateDriverDto.status !== undefined) {
-        updateFields.push(`status = $${paramIndex++}`);
-        values.push(updateDriverDto.status);
-      }
-      if (updateDriverDto.notes !== undefined) {
-        updateFields.push(`notes = $${paramIndex++}`);
-        values.push(updateDriverDto.notes);
-      }
-
-      updateFields.push(`modified_at = CURRENT_TIMESTAMP`);
+      // Agregar el ID al final de los valores
       values.push(id);
 
-      const query = `
-        UPDATE drivers
-        SET ${updateFields.join(', ')}
-        WHERE id_driver = $${paramIndex}
-        RETURNING *
-      `;
-
+      // Ejecutar query
       const result = await this.dataSource.query(query, values);
       return result[0];
     } catch (error) {
@@ -178,6 +167,59 @@ export class DriversService {
     } catch (error) {
       console.error('Error al buscar conductores disponibles:', error);
       return [];
+    }
+  }
+
+  async uploadLicense(id: number, file: Express.Multer.File): Promise<Driver> {
+    try {
+      // Obtener datos completos del conductor incluyendo información del usuario
+      const query = `
+        SELECT d.*, u.identification, u.first_name, u.last_name, u.email, u.phone
+        FROM drivers d
+        INNER JOIN users u ON d.id_user = u.id_user
+        WHERE d.id_driver = $1 AND d.deleted_at IS NULL
+      `;
+      const result = await this.dataSource.query(query, [id]);
+
+      if (!result[0]) {
+        throw new NotFoundException(`Conductor con ID ${id} no encontrado`);
+      }
+
+      const driver = result[0];
+
+      // Construir nombre de carpeta: CC-{identification}-{first_name}-{last_name}
+      const folderName = this.storageService.sanitizeFolderName(
+        `CC-${driver.identification}-${driver.first_name}-${driver.last_name}`,
+      );
+
+      // Obtener extensión del archivo
+      const fileExtension = file.originalname.split('.').pop();
+
+      // Construir nombre de archivo: licencia-{identification}.{extension}
+      const fileName = `licencia-${driver.identification}.${fileExtension}`;
+
+      // Versionar archivo existente si ya hay una licencia
+      if (driver.license_photo) {
+        const baseFileName = `licencia-${driver.identification}`;
+        await this.storageService.versionExistingFile(folderName, baseFileName);
+      }
+
+      // Subir el nuevo archivo a Supabase Storage con la estructura personalizada
+      const fileUrl = await this.storageService.uploadFile(file, folderName, fileName);
+
+      // Actualizar la base de datos con la nueva URL
+      const updateQuery = `
+        UPDATE drivers
+        SET license_photo = $1, modified_at = CURRENT_TIMESTAMP
+        WHERE id_driver = $2
+        RETURNING *
+      `;
+
+      const updateResult = await this.dataSource.query(updateQuery, [fileUrl, id]);
+      return updateResult[0];
+    } catch (error) {
+      console.error('Error al subir licencia del conductor:', error);
+      throw error;
     }
   }
 }
