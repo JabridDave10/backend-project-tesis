@@ -18,6 +18,8 @@ import { FileValidationService } from '../../common/services/file-validation.ser
  */
 @ApiTags('drivers')
 @Controller('drivers')
+@UseGuards(AuthGuard)
+@ApiBearerAuth('JWT-auth')
 export class DriversController {
   constructor(
     private readonly driversService: DriversService,

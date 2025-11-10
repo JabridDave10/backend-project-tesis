@@ -60,13 +60,19 @@ export class AuthController {
 
       if (result != null && result != undefined) {
         // Configurar cookie httpOnly para el JWT
-        response.cookie('access_token', result.access_token, {
+        const cookieOptions: any = {
           httpOnly: true,        // No accesible desde JavaScript del cliente
           secure: process.env.NODE_ENV === 'production', // Solo HTTPS en producción
-          sameSite: 'strict',    // Protección contra CSRF
-          maxAge: 60 * 1000,     // 60 segundos (como está configurado en JWT)
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Para CORS
+          maxAge: 24 * 60 * 60 * 1000, // 24 horas (como está configurado en JWT)
           path: '/',             // Disponible en toda la aplicación
-        });
+        };
+        
+        console.log('Setting cookie with options:', cookieOptions);
+        console.log('Token length:', result.access_token?.length);
+        console.log('Origin:', request.headers['origin'] || request.headers['referer']);
+        
+        response.cookie('access_token', result.access_token, cookieOptions);
 
         // Retornar solo los datos del usuario (el token está en la cookie)
         response.status(200).json({

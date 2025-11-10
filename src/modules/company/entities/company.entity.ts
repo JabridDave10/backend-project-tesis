@@ -17,10 +17,10 @@ export class Company {
     @Column('int8')
     id_status: number;
 
-    @Column('timestamp')
+    @CreateDateColumn({ type: 'timestamp' })
     created_at: Date;
 
-    @UpdateDateColumn('timestamp')
+    @UpdateDateColumn({ type: 'timestamp' })
     modified_at: Date;
 
     @Column('timestamp', { nullable: true })
