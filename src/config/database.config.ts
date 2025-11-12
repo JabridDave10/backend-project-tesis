@@ -7,15 +7,16 @@ import { Route } from '../modules/routes/entities/route.entity';
 import { Role } from '../modules/roles/entities/role.entity';
 import { UserRole } from '../modules/roles/entities/user_role';
 import { Company } from '../modules/company/entities/company.entity';
+import { CompanyUser } from '../modules/company/entities/company_user.entity';
 
 export const databaseConfig: TypeOrmModuleOptions = {
   type: 'postgres',
-  host: process.env.DB_HOST || 'localhost',
+  host: process.env.DB_HOST || 'postgres',
   port: parseInt(process.env.DB_PORT || '5432'),
   username: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASS || 'admin',
-  database: process.env.DB_NAME || 'logistic_routing_project',
-  entities: [User, Credentials, Driver, Vehicle, Route, Role, UserRole, Company],
+  password: process.env.DB_PASS || 'postgres',
+  database: process.env.DB_NAME || 'logistic-routing-project',
+  entities: [User, Credentials, Driver, Vehicle, Route, Role, UserRole, Company, CompanyUser],
   synchronize: process.env.NODE_ENV !== 'production', // Solo en desarrollo
   logging: process.env.NODE_ENV === 'development',
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,

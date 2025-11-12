@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, MinLength, MaxLength, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, MinLength, MaxLength, IsOptional, IsInt } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateCompanyDto {
@@ -12,5 +12,8 @@ export class CreateCompanyDto {
 
     @IsString()
     @IsOptional()
-    logo: string;  
+    logo: string;
+    
+    @IsInt()
+    id_user: number;
 }

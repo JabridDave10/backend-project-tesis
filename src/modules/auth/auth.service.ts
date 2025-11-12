@@ -27,7 +27,7 @@ export class AuthService {
     }
 
     // Obtener los datos del usuario
-    const user = await this.usersService.findOne(credentials.id_user);
+    const user: any = await this.usersService.findOne(credentials.id_user);
     if (!user) {
       throw new UnauthorizedException('Usuario no encontrado');
     }
@@ -36,7 +36,9 @@ export class AuthService {
       sub: user.id_user,  
       username: credentials.username,
       email: user.email,
-      role: user.id_role 
+      role: user.id_role,
+      company: user.id_company || undefined,
+      photo: user.photo || undefined,
     };
     
     return {
@@ -46,7 +48,9 @@ export class AuthService {
         username: credentials.username,
         email: user.email,
         first_name: user.first_name,
-        last_name: user.last_name
+        last_name: user.last_name,
+        id_company: user.id_company || undefined,
+        id_role: user.id_role || undefined
       }
     };
   }
