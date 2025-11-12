@@ -10,6 +10,8 @@ import { VehiclesModule } from './modules/vehicles/vehicles.module';
 import { RoleModule } from './modules/roles/role.module';
 import { RoutesModule } from './modules/routes/routes.module';
 import { CredentialsModule } from './modules/credentials/credentials.module';
+import { StorageModule } from './modules/storage/storage.module';
+import { ProductsModule } from './modules/products/products.module';
 import { CompanyModule } from './modules/company/company.module';
 import { CommonModule } from './common/common.module';
 import { LoggerMiddleware } from './logger/logger.middleware';
@@ -20,8 +22,10 @@ import { databaseConfig } from './config/database.config';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+      
     }),
     TypeOrmModule.forRoot(databaseConfig),
+    StorageModule,
     CommonModule,
     AuthModule,
     UsersModule,
@@ -30,6 +34,7 @@ import { databaseConfig } from './config/database.config';
     RoutesModule,
     RoleModule,
     CredentialsModule,
+    ProductsModule,
     CompanyModule
   ],
   controllers: [AppController],

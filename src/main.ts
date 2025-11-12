@@ -26,10 +26,27 @@ async function bootstrap() {
   });
   
   const config = new DocumentBuilder()
-    .setTitle('Cats example')
-    .setDescription('The cats API description')
+    .setTitle('Logistic Routing Project API')
+    .setDescription('API para el sistema de gestión de rutas logísticas, conductores, vehículos y rutas')
     .setVersion('1.0')
-    .addTag('cats')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Ingresa el token JWT',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
+    .addTag('auth', 'Autenticación y autorización')
+    .addTag('users', 'Gestión de usuarios')
+    .addTag('drivers', 'Gestión de conductores')
+    .addTag('vehicles', 'Gestión de vehículos')
+    .addTag('routes', 'Gestión de rutas')
+    .addTag('roles', 'Gestión de roles')
+    .addTag('credentials', 'Gestión de credenciales')
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);

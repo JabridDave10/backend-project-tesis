@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { User } from './entities/user.entity';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { CredentialsService } from '../credentials/credentials.service';
+import { StorageService } from '../storage/storage.service';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -12,7 +13,8 @@ export class UsersService {
     @InjectDataSource()
     private dataSource: DataSource,
     private credentialsService: CredentialsService,
-  ) { }
+    private storageService: StorageService,
+  ) {}
 
   private async createUser(userData: any): Promise<User> {
     console.log('Datos del usuario a insertar:', userData);
@@ -49,13 +51,13 @@ export class UsersService {
     // Verificar si el email ya existe
     const existingUser = await this.findByEmail(registerDto.email);
     if (existingUser) {
-      throw new Error('El email ya está registrado');
+      throw new ConflictException('El email ya está registrado');
     }
 
     // Verificar si el username ya existe
     const existingCredentials = await this.credentialsService.findByUsername(registerDto.email);
     if (existingCredentials) {
-      throw new Error('El email ya está registrado como username');
+      throw new ConflictException('El email ya está registrado como username');
     }
 
     // Hash de la contraseña
@@ -161,12 +163,63 @@ export class UsersService {
   //   await this.dataSource
   //     .createQueryBuilder()
   //     .update(User)
-  //     .set({ 
+  //     .set({
   //       deleted_at: new Date(),
-  //       estsis: 0 
+  //       estsis: 0
   //     })
   //     .where('id_user = :id', { id })
   //     .execute();
   // }
+
+  async uploadPhoto(id: number, file: Express.Multer.File): Promise<User> {
+    try {
+      // Obtener datos completos del usuario
+      const query = `
+        SELECT * FROM users
+        WHERE id_user = $1 AND deleted_at IS NULL
+      `;
+      const result = await this.dataSource.query(query, [id]);
+
+      if (!result[0]) {
+        throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
+      }
+
+      const user = result[0];
+
+      // Construir nombre de carpeta: CC-{identification}-{first_name}-{last_name}
+      const folderName = this.storageService.sanitizeFolderName(
+        `CC-${user.identification}-${user.first_name}-${user.last_name}`,
+      );
+
+      // Obtener extensión del archivo
+      const fileExtension = file.originalname.split('.').pop();
+
+      // Construir nombre de archivo: foto-perfil-{identification}.{extension}
+      const fileName = `foto-perfil-${user.identification}.${fileExtension}`;
+
+      // Versionar archivo existente si ya hay una foto
+      if (user.photo) {
+        const baseFileName = `foto-perfil-${user.identification}`;
+        await this.storageService.versionExistingFile(folderName, baseFileName);
+      }
+
+      // Subir el nuevo archivo a Supabase Storage con la estructura personalizada
+      const fileUrl = await this.storageService.uploadFile(file, folderName, fileName);
+
+      // Actualizar la base de datos con la nueva URL
+      const updateQuery = `
+        UPDATE users
+        SET photo = $1, modified_at = CURRENT_TIMESTAMP
+        WHERE id_user = $2
+        RETURNING *
+      `;
+
+      const updateResult = await this.dataSource.query(updateQuery, [fileUrl, id]);
+      return updateResult[0];
+    } catch (error) {
+      console.error('Error al subir foto de perfil del usuario:', error);
+      throw error;
+    }
+  }
 
 }

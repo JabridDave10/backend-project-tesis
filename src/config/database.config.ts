@@ -1,26 +1,23 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { User } from '../modules/users/entities/user.entity';
-import { Credentials } from '../modules/credentials/entities/credentials.entity';
-import { Driver } from '../modules/drivers/entities/driver.entity';
-import { Vehicle } from '../modules/vehicles/entities/vehicle.entity';
-import { Route } from '../modules/routes/entities/route.entity';
-import { Role } from '../modules/roles/entities/role.entity';
-import { UserRole } from '../modules/roles/entities/user_role';
-import { Company } from '../modules/company/entities/company.entity';
-import { CompanyUser } from '../modules/company/entities/company_user.entity';
+import { join } from 'path';
 
 export const databaseConfig: TypeOrmModuleOptions = {
   type: 'postgres',
   host: process.env.DB_HOST || 'postgres',
   port: parseInt(process.env.DB_PORT || '5432'),
   username: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASS || 'postgres',
-  database: process.env.DB_NAME || 'logistic-routing-project',
-  entities: [User, Credentials, Driver, Vehicle, Route, Role, UserRole, Company, CompanyUser],
-  synchronize: process.env.NODE_ENV !== 'production', // Solo en desarrollo
+  password: process.env.DB_PASS || 'admin',
+  database: process.env.DB_NAME || 'logistic_routing_project',
+  // Cargar todas las entidades automáticamente usando patrón de glob
+  // Funciona tanto en desarrollo (.ts) como en producción (.js)
+  entities: [
+    join(__dirname, '..', 'modules', '**', 'entities', '*.entity.js'),
+    join(__dirname, '..', 'modules', '**', 'entities', '*.entity.ts'),
+  ],
+  synchronize: true, // Solo en desarrollo
   logging: process.env.NODE_ENV === 'development',
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   migrations: ['dist/migrations/*.js'],
   migrationsRun: false,
-  autoLoadEntities: true,
+  autoLoadEntities: true, // También activo por si las entidades están registradas en módulos
 };
