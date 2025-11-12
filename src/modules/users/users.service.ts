@@ -18,7 +18,7 @@ export class UsersService {
 
   private async createUser(userData: any): Promise<User> {
     console.log('Datos del usuario a insertar:', userData);
-    
+
     try {
       // Usar query SQL directa para evitar problemas con createQueryBuilder
       const query = `
@@ -26,7 +26,7 @@ export class UsersService {
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING *
       `;
-      
+
       const values = [
         userData.first_name,
         userData.last_name,
@@ -37,7 +37,7 @@ export class UsersService {
         userData.photo || '',
         userData.id_role
       ];
-      
+
       const result = await this.dataSource.query(query, values);
       console.log('Usuario creado exitosamente:', result[0]);
       return result[0];
@@ -106,8 +106,24 @@ export class UsersService {
   async findOne(id: number): Promise<User | undefined> {
     try {
       const query = `
-        SELECT * FROM users
-        WHERE id_user = $1 AND deleted_at IS NULL
+        SELECT 
+          u.*,
+          (SELECT ur.id_role 
+           FROM user_role ur 
+           WHERE ur.id_user = u.id_user 
+           AND ur.deleted_at IS NULL 
+           ORDER BY ur.created_at DESC 
+           LIMIT 1) as id_role,
+          (SELECT cu.id_company 
+           FROM company_user cu 
+           WHERE cu.id_user = u.id_user 
+           AND cu.deleted_at IS NULL 
+           AND cu.id_status = 1 
+           ORDER BY cu.created_at DESC 
+           LIMIT 1) as id_company
+        FROM users u
+        WHERE u.id_user = $1 AND u.deleted_at IS NULL
+        LIMIT 1
       `;
       const result = await this.dataSource.query(query, [id]);
       return result[0] || undefined;
@@ -138,7 +154,7 @@ export class UsersService {
   //     .set({ ...updateUserDto, modified_at: new Date() })
   //     .where('id_user = :id', { id })
   //     .execute();
-    
+
   //   return await this.findOne(id);
   // }
 

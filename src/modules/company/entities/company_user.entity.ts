@@ -1,7 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 
-@Entity('company')
-export class Company {
+@Entity('company_user')
+export class CompanyUser {
     @PrimaryGeneratedColumn()
     id_company_user: number;
 
@@ -14,10 +14,10 @@ export class Company {
     @Column('int8')
     id_status: number;
 
-    @Column('timestamp')
+    @CreateDateColumn({ type: 'timestamp' })
     created_at: Date;
 
-    @UpdateDateColumn('timestamp')
+    @UpdateDateColumn({ type: 'timestamp' })
     modified_at: Date;
 
     @Column('timestamp', { nullable: true })
