@@ -43,17 +43,16 @@ export class RouteProduct {
   created_at: Date;
 
   // ==================== RELACIONES ====================
-  // Comentadas porque usamos raw SQL queries, no repositorios TypeORM
 
-  // @ManyToOne(() => Route)
-  // @JoinColumn({ name: 'id_route' })
-  // route: Route;
+  @ManyToOne(() => Route, (route) => route.routeProducts)
+  @JoinColumn({ name: 'id_route' })
+  route: Route;
 
-  // @ManyToOne(() => Product)
-  // @JoinColumn({ name: 'id_product' })
-  // product: Product;
+  @ManyToOne(() => Product, (product) => product.routeProducts)
+  @JoinColumn({ name: 'id_product' })
+  product: Product;
 
-  // @ManyToOne(() => ProductBatch, { nullable: true })
-  // @JoinColumn({ name: 'id_batch' })
-  // batch: ProductBatch;
+  @ManyToOne(() => ProductBatch, { nullable: true })
+  @JoinColumn({ name: 'id_batch' })
+  batch: ProductBatch;
 }

@@ -161,7 +161,7 @@ export class DriversService {
         FROM drivers d
         INNER JOIN users u ON d.id_user = u.id_user
         WHERE d.status = 'disponible' AND d.deleted_at IS NULL
-        ORDER BY d.years_experience DESC
+        ORDER BY d.created_at DESC
       `;
       return await this.dataSource.query(query);
     } catch (error) {

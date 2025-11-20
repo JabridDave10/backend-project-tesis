@@ -1,4 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Company } from './company.entity';
+import { User } from 'src/modules/users/entities/user.entity';
 
 @Entity('company_user')
 export class CompanyUser {
@@ -22,4 +24,13 @@ export class CompanyUser {
 
     @Column('timestamp', { nullable: true })
     deleted_at: Date;
+
+    // Relaciones
+    @ManyToOne(() => Company, { nullable: true })
+    @JoinColumn({ name: 'id_company' })
+    company: Company;
+
+    @ManyToOne(() => User, { nullable: true })
+    @JoinColumn({ name: 'id_user' })
+    user: User;
 }

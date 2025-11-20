@@ -12,7 +12,10 @@ import { RoutesModule } from './modules/routes/routes.module';
 import { CredentialsModule } from './modules/credentials/credentials.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { ProductsModule } from './modules/products/products.module';
+import { ClientsModule } from './modules/clients/clients.module';
 import { CompanyModule } from './modules/company/company.module';
+import { WarehouseModule } from './modules/warehouse/warehouse.module';
+import { SalesModule } from './modules/sale/sales.module';
 import { CommonModule } from './common/common.module';
 import { LoggerMiddleware } from './logger/logger.middleware';
 import { databaseConfig } from './config/database.config';
@@ -35,7 +38,10 @@ import { databaseConfig } from './config/database.config';
     RoleModule,
     CredentialsModule,
     ProductsModule,
-    CompanyModule
+    CompanyModule,
+    WarehouseModule,
+    ClientsModule,
+    SalesModule
   ],
   controllers: [AppController],
   providers: [AppService],
@@ -67,6 +73,22 @@ export class AppModule implements NestModule {
         method: RequestMethod.ALL,
       }, {
         path: 'auth',
+        method: RequestMethod.ALL,
+      },
+      {
+        path: 'warehouse',
+        method: RequestMethod.ALL,
+      },
+      {
+        path: 'products',
+        method: RequestMethod.ALL,
+      },
+      {
+        path: 'clients',
+        method: RequestMethod.ALL,
+      },
+      {
+        path: 'sales',
         method: RequestMethod.ALL,
       }
     );

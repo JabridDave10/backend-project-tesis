@@ -12,6 +12,8 @@ import { Company } from '../../company/entities/company.entity';
 import { ProductCategory } from './product-category.entity';
 import { Stock } from './stock.entity';
 import { ProductBatch } from './product-batch.entity';
+import { RouteProduct } from './route-product.entity';
+import { SalesDetail } from '../../sale/entities/sales_detail.entity';
 import { UnitTypeEnum } from '../enums/product.enums';
 
 /**
@@ -114,21 +116,26 @@ export class Product {
   deleted_at: Date;
 
   // ==================== RELACIONES ====================
-  // Comentadas porque usamos raw SQL queries, no repositorios TypeORM
 
-  // @ManyToOne(() => Company)
-  // @JoinColumn({ name: 'id_company' })
-  // company: Company;
+  @ManyToOne(() => Company)
+  @JoinColumn({ name: 'id_company' })
+  company: Company;
 
-  // @ManyToOne(() => ProductCategory, (category) => category.products, {
-  //   nullable: true,
-  // })
-  // @JoinColumn({ name: 'id_category' })
-  // category: ProductCategory;
+  @ManyToOne(() => ProductCategory, (category) => category.products, {
+    nullable: true,
+  })
+  @JoinColumn({ name: 'id_category' })
+  category: ProductCategory;
 
-  // @OneToMany(() => Stock, (stock) => stock.product)
-  // stocks: Stock[];
+  @OneToMany(() => Stock, (stock) => stock.product)
+  stocks: Stock[];
 
-  // @OneToMany(() => ProductBatch, (batch) => batch.product)
-  // batches: ProductBatch[];
+  @OneToMany(() => ProductBatch, (batch) => batch.product)
+  batches: ProductBatch[];
+
+  @OneToMany(() => RouteProduct, (routeProduct) => routeProduct.product)
+  routeProducts: RouteProduct[];
+
+  @OneToMany(() => SalesDetail, (detail) => detail.product)
+  salesDetails: SalesDetail[];
 }

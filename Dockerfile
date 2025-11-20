@@ -1,5 +1,8 @@
 FROM node:20-alpine
 
+# Instalar netcat para verificar conexiones
+RUN apk add --no-cache netcat-openbsd
+
 WORKDIR /usr/src/app
 
 COPY package*.json ./

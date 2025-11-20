@@ -1,4 +1,8 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import { ProductCategory } from '../../products/entities/product-category.entity';
+import { Product } from '../../products/entities/product.entity';
+import { Warehouse } from '../../warehouse/entities/warehouse.entity';
+import { Sales } from '../../sale/entities/sales.entity';
 
 @Entity('company')
 export class Company {
@@ -25,4 +29,19 @@ export class Company {
 
     @Column('timestamp', { nullable: true })
     deleted_at: Date;
+
+    // Relaciones con productos
+    @OneToMany(() => ProductCategory, (category) => category.company)
+    productCategories: ProductCategory[];
+
+    @OneToMany(() => Product, (product) => product.company)
+    products: Product[];
+
+    // Relación con bodegas
+    @OneToMany(() => Warehouse, (warehouse) => warehouse.company)
+    warehouses: Warehouse[];
+
+    // Relación con ventas
+    @OneToMany(() => Sales, (sale) => sale.company)
+    sales: Sales[];
 }

@@ -5,9 +5,13 @@ import {
   CreateDateColumn,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { Product } from './product.entity';
-import { Warehouse } from '../../warehouse/warehouse.entity';
+import { Warehouse } from '../../warehouse/entities/warehouse.entity';
+import { StockMovement } from './stock-movement.entity';
+import { RouteProduct } from './route-product.entity';
+import { SalesDetail } from '../../sale/entities/sales_detail.entity';
 import { BatchStatus } from '../enums/product.enums';
 
 /**
@@ -56,13 +60,21 @@ export class ProductBatch {
   created_at: Date;
 
   // ==================== RELACIONES ====================
-  // Comentadas porque usamos raw SQL queries, no repositorios TypeORM
 
-  // @ManyToOne(() => Product, (product) => product.batches)
-  // @JoinColumn({ name: 'id_product' })
-  // product: Product;
+  @ManyToOne(() => Product, (product) => product.batches)
+  @JoinColumn({ name: 'id_product' })
+  product: Product;
 
-  // @ManyToOne(() => Warehouse)
-  // @JoinColumn({ name: 'id_warehouse' })
-  // warehouse: Warehouse;
+  @ManyToOne(() => Warehouse)
+  @JoinColumn({ name: 'id_warehouse' })
+  warehouse: Warehouse;
+
+  @OneToMany(() => StockMovement, (movement) => movement.batch)
+  stockMovements: StockMovement[];
+
+  @OneToMany(() => RouteProduct, (routeProduct) => routeProduct.batch)
+  routeProducts: RouteProduct[];
+
+  @OneToMany(() => SalesDetail, (detail) => detail.batch)
+  salesDetails: SalesDetail[];
 }

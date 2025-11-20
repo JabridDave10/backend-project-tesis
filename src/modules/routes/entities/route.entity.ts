@@ -1,6 +1,8 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { Driver } from '../../drivers/entities/driver.entity';
 import { Vehicle } from '../../vehicles/entities/vehicle.entity';
+import { RouteProduct } from '../../products/entities/route-product.entity';
+import { Sales } from '../../sale/entities/sales.entity';
 
 @Entity('routes')
 export class Route {
@@ -84,4 +86,10 @@ export class Route {
   @ManyToOne(() => Vehicle, { nullable: true })
   @JoinColumn({ name: 'id_vehicle' })
   vehicle: Vehicle;
+
+  @OneToMany(() => RouteProduct, (routeProduct) => routeProduct.route)
+  routeProducts: RouteProduct[];
+
+  @OneToMany(() => Sales, (sale) => sale.route)
+  sales: Sales[];
 }
