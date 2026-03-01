@@ -48,9 +48,14 @@ export class GpsTrackingController {
       driver.id_driver,
     );
 
+    const assignedVehicle = await this.gpsTrackingService.getAssignedVehicle(
+      driver.id_driver,
+    );
+
     return {
       driver,
       activeRoute,
+      assignedVehicle,
     };
   }
 

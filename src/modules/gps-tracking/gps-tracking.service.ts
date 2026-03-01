@@ -136,6 +136,23 @@ export class GpsTrackingService {
     }
   }
 
+  async getAssignedVehicle(driverId: number) {
+    try {
+      const result = await this.dataSource.query(
+        `SELECT id_vehicle, license_plate, vehicle_type, brand, model, year,
+                weight_capacity, volume_capacity, status, current_mileage, photo
+         FROM vehicles
+         WHERE id_driver = $1 AND deleted_at IS NULL
+         LIMIT 1`,
+        [driverId],
+      );
+      return result[0] || null;
+    } catch (error) {
+      console.error('Error getting assigned vehicle:', error);
+      return null;
+    }
+  }
+
   async getActiveRouteForDriver(driverId: number) {
     try {
       const result = await this.dataSource.query(
