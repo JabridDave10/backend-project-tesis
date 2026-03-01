@@ -1,19 +1,56 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { Route } from './entities/route.entity';
 import { CreateRouteDto } from './dto/create-route.dto';
 import { UpdateRouteDto } from './dto/update-route.dto';
+import { LicenseVehicleValidatorService } from '../vehicles/license-vehicle-validator.service';
 
 @Injectable()
 export class RoutesService {
   constructor(
     @InjectDataSource()
     private dataSource: DataSource,
+    private readonly licenseValidator: LicenseVehicleValidatorService,
   ) {}
+
+  private async validateRouteDriverVehicle(driverId: number, vehicleId: number): Promise<void> {
+    const vehicleResult = await this.dataSource.query(
+      `SELECT vehicle_type FROM vehicles WHERE id_vehicle = $1 AND deleted_at IS NULL`,
+      [vehicleId],
+    );
+    if (!vehicleResult[0]) {
+      throw new NotFoundException(`Vehiculo con ID ${vehicleId} no encontrado`);
+    }
+
+    const driverResult = await this.dataSource.query(
+      `SELECT license_categories FROM drivers WHERE id_driver = $1 AND deleted_at IS NULL`,
+      [driverId],
+    );
+    if (!driverResult[0]) {
+      throw new NotFoundException(`Conductor con ID ${driverId} no encontrado`);
+    }
+
+    const rawCategories = driverResult[0].license_categories;
+    const licenseCategories: string[] = typeof rawCategories === 'string'
+      ? rawCategories.split(',').map((c: string) => c.trim()).filter(Boolean)
+      : Array.isArray(rawCategories) ? rawCategories : [];
+
+    const validation = this.licenseValidator.validateCompatibility(
+      licenseCategories,
+      vehicleResult[0].vehicle_type,
+    );
+    if (!validation.valid) {
+      throw new BadRequestException(validation.message);
+    }
+  }
 
   async create(createRouteDto: CreateRouteDto): Promise<Route> {
     try {
+      if (createRouteDto.id_driver && createRouteDto.id_vehicle) {
+        await this.validateRouteDriverVehicle(createRouteDto.id_driver, createRouteDto.id_vehicle);
+      }
+
       const query = `
         INSERT INTO routes (
           route_code, id_driver, id_vehicle, origin_address, origin_latitude, origin_longitude,
@@ -108,7 +145,15 @@ export class RoutesService {
 
   async update(id: number, updateRouteDto: UpdateRouteDto): Promise<Route> {
     try {
-      await this.findOne(id);
+      const existingRoute = await this.findOne(id);
+
+      // Validate driver-vehicle compatibility if either is changing
+      const driverId = updateRouteDto.id_driver !== undefined ? updateRouteDto.id_driver : existingRoute.id_driver;
+      const vehicleId = updateRouteDto.id_vehicle !== undefined ? updateRouteDto.id_vehicle : existingRoute.id_vehicle;
+
+      if (driverId && vehicleId && (updateRouteDto.id_driver !== undefined || updateRouteDto.id_vehicle !== undefined)) {
+        await this.validateRouteDriverVehicle(driverId, vehicleId);
+      }
 
       const updateFields: string[] = [];
       const values: any[] = [];

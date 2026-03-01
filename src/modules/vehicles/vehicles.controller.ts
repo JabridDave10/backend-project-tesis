@@ -43,6 +43,29 @@ export class VehiclesController {
     return await this.vehiclesService.getAvailableVehicles();
   }
 
+  @Get('compatible-drivers/:vehicleId')
+  @ApiOperation({ summary: 'Obtener conductores compatibles con el tipo de vehiculo' })
+  @ApiResponse({ status: 200, description: 'Lista de conductores compatibles' })
+  async getCompatibleDrivers(@Param('vehicleId') vehicleId: string) {
+    return await this.vehiclesService.getCompatibleDrivers(+vehicleId);
+  }
+
+  @Get('compatible-types')
+  @ApiOperation({ summary: 'Obtener tipos de vehiculo compatibles con las licencias dadas' })
+  @ApiResponse({ status: 200, description: 'Lista de tipos de vehiculo compatibles' })
+  @ApiQuery({ name: 'licenses', description: 'Categorias de licencia separadas por coma', example: 'A1,B1' })
+  async getCompatibleTypes(@Query('licenses') licenses: string) {
+    const licenseArray = licenses ? licenses.split(',').map(l => l.trim()) : [];
+    return this.vehiclesService.getCompatibleVehicleTypes(licenseArray);
+  }
+
+  @Get('required-licenses/:vehicleType')
+  @ApiOperation({ summary: 'Obtener licencias requeridas para un tipo de vehiculo' })
+  @ApiResponse({ status: 200, description: 'Lista de licencias requeridas' })
+  async getRequiredLicenses(@Param('vehicleType') vehicleType: string) {
+    return this.vehiclesService.getRequiredLicenses(vehicleType);
+  }
+
   @Get('by-driver/:driverId')
   @ApiOperation({ summary: 'Obtener vehículos de un conductor específico' })
   @ApiResponse({ status: 200, description: 'Lista de vehículos del conductor' })

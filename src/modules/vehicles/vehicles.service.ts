@@ -1,19 +1,46 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { Vehicle } from './entities/vehicle.entity';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
+import { LicenseVehicleValidatorService } from './license-vehicle-validator.service';
 
 @Injectable()
 export class VehiclesService {
   constructor(
     @InjectDataSource()
     private dataSource: DataSource,
+    private readonly licenseValidator: LicenseVehicleValidatorService,
   ) {}
+
+  private async validateDriverLicenseForVehicle(driverId: number, vehicleType: string): Promise<void> {
+    const driverResult = await this.dataSource.query(
+      `SELECT license_categories FROM drivers WHERE id_driver = $1 AND deleted_at IS NULL`,
+      [driverId],
+    );
+
+    if (!driverResult[0]) {
+      throw new NotFoundException(`Conductor con ID ${driverId} no encontrado`);
+    }
+
+    const rawCategories = driverResult[0].license_categories;
+    const licenseCategories: string[] = typeof rawCategories === 'string'
+      ? rawCategories.split(',').map((c: string) => c.trim()).filter(Boolean)
+      : Array.isArray(rawCategories) ? rawCategories : [];
+
+    const validation = this.licenseValidator.validateCompatibility(licenseCategories, vehicleType);
+    if (!validation.valid) {
+      throw new BadRequestException(validation.message);
+    }
+  }
 
   async create(createVehicleDto: CreateVehicleDto): Promise<Vehicle> {
     try {
+      if (createVehicleDto.id_driver) {
+        await this.validateDriverLicenseForVehicle(createVehicleDto.id_driver, createVehicleDto.vehicle_type);
+      }
+
       const query = `
         INSERT INTO vehicles (
           license_plate, vehicle_type, brand, model, year,
@@ -98,7 +125,15 @@ export class VehiclesService {
   async update(id: number, updateVehicleDto: UpdateVehicleDto): Promise<Vehicle> {
     try {
       // Verificar que el vehículo existe
-      await this.findOne(id);
+      const existingVehicle = await this.findOne(id);
+
+      // Validar compatibilidad licencia-vehiculo si cambia conductor o tipo
+      const driverId = updateVehicleDto.id_driver !== undefined ? updateVehicleDto.id_driver : existingVehicle.id_driver;
+      const vehicleType = updateVehicleDto.vehicle_type !== undefined ? updateVehicleDto.vehicle_type : existingVehicle.vehicle_type;
+
+      if (driverId && (updateVehicleDto.id_driver !== undefined || updateVehicleDto.vehicle_type !== undefined)) {
+        await this.validateDriverLicenseForVehicle(driverId, vehicleType);
+      }
 
       const updateFields: string[] = [];
       const values: any[] = [];
@@ -226,5 +261,43 @@ export class VehiclesService {
       console.error('Error al buscar vehículos por conductor:', error);
       return [];
     }
+  }
+
+  async getCompatibleDrivers(vehicleId: number): Promise<any[]> {
+    try {
+      const vehicle = await this.findOne(vehicleId);
+      const requiredLicenses = this.licenseValidator.getRequiredLicenses(vehicle.vehicle_type);
+
+      if (requiredLicenses.length === 0) return [];
+
+      // Get all active drivers with their license categories
+      const drivers = await this.dataSource.query(`
+        SELECT d.*, u.first_name, u.last_name, u.email, u.phone
+        FROM drivers d
+        JOIN users u ON d.id_user = u.id_user
+        WHERE d.deleted_at IS NULL AND d.status != 'inactivo'
+      `);
+
+      return drivers.filter((driver: any) => {
+        const rawCategories = driver.license_categories;
+        const categories: string[] = typeof rawCategories === 'string'
+          ? rawCategories.split(',').map((c: string) => c.trim()).filter(Boolean)
+          : Array.isArray(rawCategories) ? rawCategories : [];
+
+        const result = this.licenseValidator.validateCompatibility(categories, vehicle.vehicle_type);
+        return result.valid;
+      });
+    } catch (error) {
+      console.error('Error al buscar conductores compatibles:', error);
+      throw error;
+    }
+  }
+
+  getCompatibleVehicleTypes(licenses: string[]): string[] {
+    return this.licenseValidator.getCompatibleVehicleTypes(licenses);
+  }
+
+  getRequiredLicenses(vehicleType: string): string[] {
+    return this.licenseValidator.getRequiredLicenses(vehicleType);
   }
 }
