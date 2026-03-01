@@ -9,6 +9,9 @@ export class Warehouse {
     @PrimaryGeneratedColumn()
     id_warehouse: number;
 
+    @Column('text', { nullable: true })
+    name: string;
+
     @Column('text')
     address: string;
 

@@ -31,10 +31,10 @@ export class StockService {
   async getStock(productId: number, warehouseId: number): Promise<Stock | null> {
     try {
       const query = `
-        SELECT s.*, p.name as product_name, p.sku, w.location as warehouse_location
+        SELECT s.*, p.name as product_name, p.sku, w.name as warehouse_name, w.address as warehouse_address
         FROM stock s
         INNER JOIN products p ON s.id_product = p.id_product
-        INNER JOIN warehouses w ON s.id_warehouse = w.id_warehouse
+        INNER JOIN warehouse w ON s.id_warehouse = w.id_warehouse
         WHERE s.id_product = $1 AND s.id_warehouse = $2
       `;
       const result = await this.dataSource.query(query, [productId, warehouseId]);
@@ -51,10 +51,10 @@ export class StockService {
   async getStockByProduct(productId: number): Promise<Stock[]> {
     try {
       const query = `
-        SELECT s.*, p.name as product_name, p.sku, w.location as warehouse_location
+        SELECT s.*, p.name as product_name, p.sku, w.name as warehouse_name, w.address as warehouse_address
         FROM stock s
         INNER JOIN products p ON s.id_product = p.id_product
-        INNER JOIN warehouses w ON s.id_warehouse = w.id_warehouse
+        INNER JOIN warehouse w ON s.id_warehouse = w.id_warehouse
         WHERE s.id_product = $1
         ORDER BY s.updated_at DESC
       `;
@@ -449,13 +449,13 @@ export class StockService {
       const query = `
         SELECT sm.*,
                p.name as product_name, p.sku,
-               wo.location as origin_location,
-               wd.location as destination_location,
+               wo.name as origin_name, wo.address as origin_address,
+               wd.name as destination_name, wd.address as destination_address,
                u.first_name, u.last_name
         FROM stock_movements sm
         INNER JOIN products p ON sm.id_product = p.id_product
-        LEFT JOIN warehouses wo ON sm.id_warehouse_origin = wo.id_warehouse
-        LEFT JOIN warehouses wd ON sm.id_warehouse_destination = wd.id_warehouse
+        LEFT JOIN warehouse wo ON sm.id_warehouse_origin = wo.id_warehouse
+        LEFT JOIN warehouse wd ON sm.id_warehouse_destination = wd.id_warehouse
         LEFT JOIN users u ON sm.created_by = u.id_user
         WHERE sm.id_product = $1
         ORDER BY sm.created_at DESC

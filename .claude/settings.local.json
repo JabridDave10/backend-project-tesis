@@ -38,7 +38,10 @@
       "WebFetch(domain:www.autofact.com.co)",
       "WebFetch(domain:www.pulzo.com)",
       "WebFetch(domain:matriculasdelmundo.com)",
-      "Bash(PGPASSWORD=postgres psql:*)"
+      "Bash(PGPASSWORD=postgres psql:*)",
+      "Bash(pushd:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker restart:*)"
     ],
     "deny": [],
     "ask": []
