@@ -18,7 +18,10 @@ export class StorageService {
     const bucketName = this.configService.get<string>('SUPABASE_S3_BUCKET');
 
     if (!endpoint || !region || !accessKeyId || !secretAccessKey || !bucketName) {
-      throw new Error('Supabase S3 configuration is missing. Please check your environment variables.');
+      this.logger.warn('Supabase S3 configuration is missing. Storage features will be unavailable.');
+      this.bucketName = '';
+      this.endpoint = '';
+      return;
     }
 
     this.bucketName = bucketName;
