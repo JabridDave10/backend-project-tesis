@@ -13,6 +13,8 @@ import {
   UnauthorizedException
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { AuthGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 import { SignInDto } from './dto/sign-in.dto';
@@ -23,7 +25,10 @@ import { plainToClass } from 'class-transformer';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    @InjectDataSource() private dataSource: DataSource,
+  ) {}
 
   @HttpCode(HttpStatus.OK)
   @Post('login')
@@ -74,9 +79,10 @@ export class AuthController {
         
         response.cookie('access_token', result.access_token, cookieOptions);
 
-        // Retornar solo los datos del usuario (el token está en la cookie)
+        // Retornar datos del usuario + token (token tambien en cookie httpOnly)
         response.status(200).json({
           user: result.user,
+          access_token: result.access_token,
           message: 'Login exitoso. Token guardado en cookie httpOnly.'
         });
         return;
@@ -150,7 +156,7 @@ export class AuthController {
   ) {
     try {
       console.log('Profile request received:', { userId: req.user.sub, ip, userAgent: request.headers['user-agent'] });
-      
+
       if (req.user != null && req.user != undefined) {
         response.status(200).json(req.user);
         return;
@@ -160,10 +166,38 @@ export class AuthController {
       }
     } catch (error) {
       console.error('Error in getProfile:', error);
-      response.status(500).json({ 
+      response.status(500).json({
         error: 'Internal server error',
-        message: error.message 
+        message: error.message
       });
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('permissions')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Obtener permisos del usuario autenticado' })
+  @ApiResponse({ status: 200, description: 'Permisos del usuario' })
+  @ApiResponse({ status: 401, description: 'Token inválido o expirado' })
+  async getPermissions(@Request() req) {
+    try {
+      const userId = req.user.sub;
+      const roleId = req.user.role;
+
+      // Obtener permisos del rol del usuario
+      const permissions = await this.dataSource.query(`
+        SELECT p.id_permission as id, p.name as nombre, p.created_at, p.modified_at, p.deleted_at
+        FROM role_permissions rp
+        INNER JOIN permissions p ON rp.id_permission = p.id_permission
+        WHERE rp.id_role = $1 AND rp.deleted_at IS NULL AND p.deleted_at IS NULL
+      `, [roleId]);
+
+      return {
+        permissions: permissions || [],
+      };
+    } catch (error) {
+      console.error('Error getting permissions:', error);
+      return { permissions: [] };
     }
   }
 }

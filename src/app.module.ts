@@ -16,6 +16,7 @@ import { ClientsModule } from './modules/clients/clients.module';
 import { CompanyModule } from './modules/company/company.module';
 import { WarehouseModule } from './modules/warehouse/warehouse.module';
 import { SalesModule } from './modules/sale/sales.module';
+import { GpsTrackingModule } from './modules/gps-tracking/gps-tracking.module';
 import { CommonModule } from './common/common.module';
 import { LoggerMiddleware } from './logger/logger.middleware';
 import { databaseConfig } from './config/database.config';
@@ -41,7 +42,8 @@ import { databaseConfig } from './config/database.config';
     CompanyModule,
     WarehouseModule,
     ClientsModule,
-    SalesModule
+    SalesModule,
+    GpsTrackingModule,
   ],
   controllers: [AppController],
   providers: [AppService],
@@ -89,6 +91,10 @@ export class AppModule implements NestModule {
       },
       {
         path: 'sales',
+        method: RequestMethod.ALL,
+      },
+      {
+        path: 'gps-tracking',
         method: RequestMethod.ALL,
       }
     );

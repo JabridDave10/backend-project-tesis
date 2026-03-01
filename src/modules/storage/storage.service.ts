@@ -11,24 +11,24 @@ export class StorageService {
   private readonly endpoint: string;
 
   constructor(private configService: ConfigService) {
-    const endpoint = this.configService.get<string>('SUPABASE_S3_ENDPOINT');
-    const region = this.configService.get<string>('SUPABASE_S3_REGION');
-    const accessKeyId = this.configService.get<string>('SUPABASE_S3_ACCESS_KEY');
-    const secretAccessKey = this.configService.get<string>('SUPABASE_S3_SECRET_KEY');
-    const bucketName = this.configService.get<string>('SUPABASE_S3_BUCKET');
+    const endpoint = this.configService.get<string>('B2_S3_ENDPOINT');
+    const region = this.configService.get<string>('B2_S3_REGION');
+    const accessKeyId = this.configService.get<string>('B2_S3_ACCESS_KEY');
+    const secretAccessKey = this.configService.get<string>('B2_S3_SECRET_KEY');
+    const bucketName = this.configService.get<string>('B2_S3_BUCKET');
 
     if (!endpoint || !region || !accessKeyId || !secretAccessKey || !bucketName) {
-      this.logger.warn('Supabase S3 configuration is missing. Storage features will be unavailable.');
+      this.logger.warn('Backblaze B2 S3 configuration is missing. Storage features will be unavailable.');
       this.bucketName = '';
       this.endpoint = '';
       return;
     }
 
     this.bucketName = bucketName;
-    this.endpoint = endpoint.replace('/storage/v1/s3', '');
+    this.endpoint = `https://${endpoint}`;
 
     this.s3Client = new S3Client({
-      endpoint,
+      endpoint: this.endpoint,
       region,
       credentials: {
         accessKeyId,
@@ -37,15 +37,15 @@ export class StorageService {
       forcePathStyle: true,
     });
 
-    this.logger.log('Storage service initialized with Supabase S3');
+    this.logger.log('Storage service initialized with Backblaze B2 S3');
   }
 
   /**
-   * Sube un archivo a Supabase Storage via S3
+   * Sube un archivo a Backblaze B2 via S3
    * @param file - El archivo a subir
    * @param folder - Carpeta dentro del bucket (ej: 'licenses', 'vehicles')
    * @param customFileName - Nombre personalizado del archivo (opcional)
-   * @returns URL pública del archivo
+   * @returns URL publica del archivo
    */
   async uploadFile(
     file: Express.Multer.File,
@@ -77,7 +77,7 @@ export class StorageService {
   }
 
   /**
-   * Elimina un archivo de Supabase Storage via S3
+   * Elimina un archivo de Backblaze B2 via S3
    * @param fileUrl - URL completa del archivo a eliminar
    */
   async deleteFile(fileUrl: string): Promise<void> {
@@ -98,7 +98,6 @@ export class StorageService {
       this.logger.log(`File deleted successfully: ${key}`);
     } catch (error) {
       this.logger.error('Error deleting file from S3:', error);
-      // No lanzamos excepción para evitar que falle la actualización si el archivo no existe
     }
   }
 
@@ -128,23 +127,33 @@ export class StorageService {
   }
 
   /**
-   * Genera la URL pública del archivo
+   * Genera la URL publica del archivo en Backblaze B2
+   * Formato: https://f005.backblazeb2.com/file/<bucket>/<key>
    * @param key - Clave del archivo en S3
-   * @returns URL pública
+   * @returns URL publica
    */
   getPublicUrl(key: string): string {
-    return `${this.endpoint}/storage/v1/object/public/${this.bucketName}/${key}`;
+    // Backblaze B2 friendly URL format
+    return `${this.endpoint}/file/${this.bucketName}/${key}`;
   }
 
   /**
    * Extrae la clave (key) de una URL completa
+   * Soporta tanto formato Backblaze como Supabase (backward compat)
    * @param fileUrl - URL completa del archivo
    * @returns Clave del archivo
    */
   private extractKeyFromUrl(fileUrl: string): string | null {
     try {
-      const match = fileUrl.match(/\/public\/[^\/]+\/(.+)$/);
-      return match ? match[1] : null;
+      // Backblaze B2 format: https://s3.region.backblazeb2.com/file/bucket/key
+      const b2Match = fileUrl.match(/\/file\/[^\/]+\/(.+)$/);
+      if (b2Match) return b2Match[1];
+
+      // Legacy Supabase format: /public/bucket/key
+      const supabaseMatch = fileUrl.match(/\/public\/[^\/]+\/(.+)$/);
+      if (supabaseMatch) return supabaseMatch[1];
+
+      return null;
     } catch (error) {
       return null;
     }
@@ -154,17 +163,17 @@ export class StorageService {
    * Valida el tipo de archivo
    * @param mimetype - Tipo MIME del archivo
    * @param allowedTypes - Tipos permitidos
-   * @returns true si es válido
+   * @returns true si es valido
    */
   validateFileType(mimetype: string, allowedTypes: string[]): boolean {
     return allowedTypes.includes(mimetype);
   }
 
   /**
-   * Valida el tamaño del archivo
-   * @param size - Tamaño en bytes
-   * @param maxSize - Tamaño máximo permitido en bytes
-   * @returns true si es válido
+   * Valida el tamano del archivo
+   * @param size - Tamano en bytes
+   * @param maxSize - Tamano maximo permitido en bytes
+   * @returns true si es valido
    */
   validateFileSize(size: number, maxSize: number): boolean {
     return size <= maxSize;
@@ -177,16 +186,16 @@ export class StorageService {
    */
   sanitizeFolderName(folderName: string): string {
     return folderName
-      .normalize('NFD') // Normalizar para separar caracteres y acentos
-      .replace(/[\u0300-\u036f]/g, '') // Remover diacríticos (tildes, acentos)
-      .replace(/[^a-zA-Z0-9-_\s]/g, '') // Remover caracteres especiales excepto guiones, guión bajo y espacios
-      .replace(/\s+/g, '-') // Reemplazar espacios con guiones
-      .replace(/-+/g, '-') // Reemplazar múltiples guiones con uno solo
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9-_\s]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
       .trim();
   }
 
   /**
-   * Lista todos los archivos en una carpeta específica
+   * Lista todos los archivos en una carpeta especifica
    * @param folder - Nombre de la carpeta
    * @returns Lista de claves (keys) de archivos
    */
@@ -206,36 +215,31 @@ export class StorageService {
   }
 
   /**
-   * Versiona un archivo existente agregando timestamp antes de la extensión
-   * @param folderPath - Ruta de la carpeta donde está el archivo
+   * Versiona un archivo existente agregando timestamp antes de la extension
+   * @param folderPath - Ruta de la carpeta donde esta el archivo
    * @param baseFileName - Nombre base del archivo (ej: licencia-1234567890)
-   * @returns true si se versionó exitosamente, false si no existía
+   * @returns true si se versiono exitosamente, false si no existia
    */
   async versionExistingFile(folderPath: string, baseFileName: string): Promise<boolean> {
     try {
-      // Listar archivos en la carpeta
       const files = await this.listFilesInFolder(folderPath);
 
-      // Buscar archivo que coincida con el nombre base (sin considerar versiones)
       const existingFile = files.find((file) => {
         const fileName = file.split('/').pop() || '';
-        return fileName.startsWith(baseFileName) && !fileName.includes('-202'); // No incluir versiones anteriores
+        return fileName.startsWith(baseFileName) && !fileName.includes('-202');
       });
 
       if (!existingFile) {
         return false;
       }
 
-      // Extraer extensión
       const parts = existingFile.split('.');
       const extension = parts.pop();
       const fileNameWithoutExt = parts.join('.');
 
-      // Crear nuevo nombre con timestamp
-      const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      const timestamp = new Date().toISOString().split('T')[0];
       const newKey = `${fileNameWithoutExt}-${timestamp}.${extension}`;
 
-      // Copiar archivo con nuevo nombre (versión)
       const copyCommand = new CopyObjectCommand({
         Bucket: this.bucketName,
         CopySource: `${this.bucketName}/${existingFile}`,
@@ -245,7 +249,6 @@ export class StorageService {
       await this.s3Client.send(copyCommand);
       this.logger.log(`File versioned: ${existingFile} -> ${newKey}`);
 
-      // Eliminar el archivo original (se subirá el nuevo)
       const deleteCommand = new DeleteObjectCommand({
         Bucket: this.bucketName,
         Key: existingFile,

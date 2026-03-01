@@ -106,20 +106,23 @@ export class UsersService {
   async findOne(id: number): Promise<User | undefined> {
     try {
       const query = `
-        SELECT 
+        SELECT
           u.*,
-          (SELECT ur.id_role 
-           FROM user_role ur 
-           WHERE ur.id_user = u.id_user 
-           AND ur.deleted_at IS NULL 
-           ORDER BY ur.created_at DESC 
-           LIMIT 1) as id_role,
-          (SELECT cu.id_company 
-           FROM company_user cu 
-           WHERE cu.id_user = u.id_user 
-           AND cu.deleted_at IS NULL 
-           AND cu.id_status = 1 
-           ORDER BY cu.created_at DESC 
+          COALESCE(
+            (SELECT ur.id_role
+             FROM user_role ur
+             WHERE ur.id_user = u.id_user
+             AND ur.deleted_at IS NULL
+             ORDER BY ur.created_at DESC
+             LIMIT 1),
+            u.id_role
+          ) as id_role,
+          (SELECT cu.id_company
+           FROM company_user cu
+           WHERE cu.id_user = u.id_user
+           AND cu.deleted_at IS NULL
+           AND cu.id_status = 1
+           ORDER BY cu.created_at DESC
            LIMIT 1) as id_company
         FROM users u
         WHERE u.id_user = $1 AND u.deleted_at IS NULL

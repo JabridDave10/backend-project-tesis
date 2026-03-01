@@ -39,6 +39,8 @@ services:
     container_name: nestjs-app
     ports:
       - "3000:3000"
+    env_file:
+      - .env
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
@@ -48,7 +50,7 @@ services:
       PORT: 3000
       NODE_ENV: development
       JWT_SECRET: Pr0j3ct_T3sis_L0g1st11c_S3cr3t_K3y
-      JWT_EXPIRES_IN: 3600s
+      JWT_EXPIRES_IN: 24h
     depends_on:
       postgres:
         condition: service_healthy
