@@ -171,6 +171,98 @@ export class GpsTrackingService {
     }
   }
 
+  async getPendingRoutesForDriver(driverId: number) {
+    try {
+      const result = await this.dataSource.query(
+        `SELECT r.*, v.license_plate, v.vehicle_type, v.brand, v.model
+         FROM routes r
+         LEFT JOIN vehicles v ON r.id_vehicle = v.id_vehicle
+         WHERE r.id_driver = $1 AND r.status = 'pendiente' AND r.deleted_at IS NULL
+         ORDER BY r.created_at DESC`,
+        [driverId],
+      );
+      return result;
+    } catch (error) {
+      console.error('Error getting pending routes for driver:', error);
+      return [];
+    }
+  }
+
+  async startRoute(routeId: number, driverId: number) {
+    try {
+      // Verify the route belongs to this driver and is pendiente
+      const route = await this.dataSource.query(
+        `SELECT id_route, id_driver, status FROM routes
+         WHERE id_route = $1 AND deleted_at IS NULL`,
+        [routeId],
+      );
+      if (!route[0]) {
+        return { success: false, message: 'Ruta no encontrada' };
+      }
+      if (route[0].id_driver !== driverId) {
+        return { success: false, message: 'Esta ruta no esta asignada a este conductor' };
+      }
+      if (route[0].status !== 'pendiente') {
+        return { success: false, message: `La ruta tiene estado '${route[0].status}', no se puede iniciar` };
+      }
+
+      // Update route to en_progreso
+      const result = await this.dataSource.query(
+        `UPDATE routes SET status = 'en_progreso', started_at = NOW(), modified_at = NOW()
+         WHERE id_route = $1 RETURNING *`,
+        [routeId],
+      );
+
+      // Update driver status to en_ruta
+      await this.updateDriverStatus(driverId, 'en_ruta');
+
+      return { success: true, route: result[0] };
+    } catch (error) {
+      console.error('Error starting route:', error);
+      return { success: false, message: 'Error al iniciar la ruta' };
+    }
+  }
+
+  async completeRoute(routeId: number, driverId: number) {
+    try {
+      const route = await this.dataSource.query(
+        `SELECT id_route, id_driver, status FROM routes
+         WHERE id_route = $1 AND deleted_at IS NULL`,
+        [routeId],
+      );
+      if (!route[0]) {
+        return { success: false, message: 'Ruta no encontrada' };
+      }
+      if (route[0].id_driver !== driverId) {
+        return { success: false, message: 'Esta ruta no esta asignada a este conductor' };
+      }
+      if (route[0].status !== 'en_progreso') {
+        return { success: false, message: `La ruta tiene estado '${route[0].status}', no se puede completar` };
+      }
+
+      const result = await this.dataSource.query(
+        `UPDATE routes SET status = 'completada', completed_at = NOW(), modified_at = NOW()
+         WHERE id_route = $1 RETURNING *`,
+        [routeId],
+      );
+
+      // Check if driver has more active routes
+      const moreRoutes = await this.dataSource.query(
+        `SELECT COUNT(*) as count FROM routes
+         WHERE id_driver = $1 AND status = 'en_progreso' AND deleted_at IS NULL`,
+        [driverId],
+      );
+      if (parseInt(moreRoutes[0].count, 10) === 0) {
+        await this.updateDriverStatus(driverId, 'disponible');
+      }
+
+      return { success: true, route: result[0] };
+    } catch (error) {
+      console.error('Error completing route:', error);
+      return { success: false, message: 'Error al completar la ruta' };
+    }
+  }
+
   async getDriverLocationHistory(driverId: number, limit = 100) {
     try {
       const result = await this.dataSource.query(

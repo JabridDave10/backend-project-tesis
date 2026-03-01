@@ -77,7 +77,7 @@ export class RoutesService {
         createRouteDto.cargo_description || null,
         createRouteDto.status || 'pendiente',
         createRouteDto.estimated_distance || null,
-        createRouteDto.estimated_duration || null,
+        createRouteDto.estimated_duration != null ? Math.round(createRouteDto.estimated_duration) : null,
         createRouteDto.estimated_cost || null,
         createRouteDto.scheduled_date || null,
         createRouteDto.notes || null,

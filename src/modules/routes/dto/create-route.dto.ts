@@ -77,7 +77,7 @@ export class CreateRouteDto {
 
   @ApiProperty({ description: 'Duración estimada en minutos', required: false })
   @IsOptional()
-  @IsInt()
+  @IsNumber()
   @Min(0)
   estimated_duration?: number;
 
