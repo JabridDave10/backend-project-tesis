@@ -11,6 +11,8 @@ RUN npm install
 
 COPY . .
 
+RUN npm run build
+
 # Copiar y dar permisos al script de entrada
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
@@ -20,5 +22,5 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
 EXPOSE 3000
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
-CMD ["npm", "run", "start:dev"]
+CMD ["npm", "run", "start:prod"]
 
