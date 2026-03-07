@@ -92,20 +92,23 @@ export class GpsTrackingService {
 
   async getDashboardStats() {
     try {
-      const [routesResult] = await this.dataSource.query(
-        `SELECT COUNT(*) as count FROM routes WHERE status = 'en_progreso' AND deleted_at IS NULL`,
-      );
-      const [vehiclesResult] = await this.dataSource.query(
-        `SELECT COUNT(*) as count FROM vehicles WHERE status = 'activo' AND deleted_at IS NULL`,
-      );
-      const [driversResult] = await this.dataSource.query(
-        `SELECT COUNT(*) as count FROM drivers WHERE deleted_at IS NULL`,
-      );
-      const [trackingResult] = await this.dataSource.query(`
-        SELECT COUNT(DISTINCT id_driver) as count
-        FROM driver_locations
-        WHERE recorded_at > NOW() - INTERVAL '30 minutes'
-      `);
+      const [[routesResult], [vehiclesResult], [driversResult], [trackingResult]] =
+        await Promise.all([
+          this.dataSource.query(
+            `SELECT COUNT(*) as count FROM routes WHERE status = 'en_progreso' AND deleted_at IS NULL`,
+          ),
+          this.dataSource.query(
+            `SELECT COUNT(*) as count FROM vehicles WHERE status = 'activo' AND deleted_at IS NULL`,
+          ),
+          this.dataSource.query(
+            `SELECT COUNT(*) as count FROM drivers WHERE deleted_at IS NULL`,
+          ),
+          this.dataSource.query(`
+            SELECT COUNT(DISTINCT id_driver) as count
+            FROM driver_locations
+            WHERE recorded_at > NOW() - INTERVAL '30 minutes'
+          `),
+        ]);
 
       return {
         active_routes: parseInt(routesResult.count, 10),
