@@ -10,7 +10,7 @@ export const databaseConfig: TypeOrmModuleOptions = {
   // Cargar todas las entidades automáticamente
   // Usar autoLoadEntities es más confiable que especificar rutas manualmente
   autoLoadEntities: true,
-  synchronize: process.env.NODE_ENV !== 'production', // Solo en desarrollo
+  synchronize: process.env.DB_SYNC === 'true' || process.env.NODE_ENV !== 'production',
   logging: process.env.NODE_ENV === 'development',
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   migrations: ['dist/migrations/*.js'],
