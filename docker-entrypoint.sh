@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# Limpiar el directorio dist de manera segura
-if [ -d "/usr/src/app/dist" ]; then
+# Limpiar el directorio dist solo en desarrollo (en prod ya está compilado)
+if [ "$NODE_ENV" != "production" ] && [ -d "/usr/src/app/dist" ]; then
     echo "Limpiando directorio dist..."
     find /usr/src/app/dist -mindepth 1 -delete 2>/dev/null || true
 fi
