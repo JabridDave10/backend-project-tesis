@@ -17,6 +17,7 @@ import { CompanyModule } from './modules/company/company.module';
 import { WarehouseModule } from './modules/warehouse/warehouse.module';
 import { SalesModule } from './modules/sale/sales.module';
 import { GpsTrackingModule } from './modules/gps-tracking/gps-tracking.module';
+import { RoutingModule } from './modules/routing/routing.module';
 import { CommonModule } from './common/common.module';
 import { LoggerMiddleware } from './logger/logger.middleware';
 import { databaseConfig } from './config/database.config';
@@ -44,6 +45,7 @@ import { databaseConfig } from './config/database.config';
     ClientsModule,
     SalesModule,
     GpsTrackingModule,
+    RoutingModule,
   ],
   controllers: [AppController],
   providers: [AppService],
