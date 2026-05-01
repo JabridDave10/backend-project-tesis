@@ -16,9 +16,10 @@ export const databaseConfig: TypeOrmModuleOptions = {
   migrations: ['dist/migrations/*.js'],
   migrationsRun: false,
   // Configuraciones adicionales para evitar problemas de conexión
-  connectTimeoutMS: 10000,
+  // Timeout amplio para tolerar cold-start de Neon (free tier auto-suspende tras ~5 min)
+  connectTimeoutMS: 30000,
   extra: {
     max: 10, // máximo de conexiones en el pool
-    connectionTimeoutMillis: 10000,
+    connectionTimeoutMillis: 30000,
   },
 };
