@@ -16,12 +16,13 @@ import {
     async canActivate(context: ExecutionContext): Promise<boolean> {
       const request = context.switchToHttp().getRequest();
       
-      // Intentar obtener el token desde las cookies primero
-      let token = this.extractTokenFromCookies(request);
-      
-      // Si no hay token en cookies, intentar desde el header Authorization (fallback)
+      // Intentar primero el header Authorization (intencion explicita del cliente,
+      // funciona en cross-origin sin depender de cookies de terceros)
+      let token = this.extractTokenFromHeader(request);
+
+      // Fallback a cookies httpOnly (same-origin / sesiones del navegador)
       if (!token) {
-        token = this.extractTokenFromHeader(request);
+        token = this.extractTokenFromCookies(request);
       }
       
       if (!token) {
